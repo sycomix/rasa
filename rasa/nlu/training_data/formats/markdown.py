@@ -68,8 +68,7 @@ class MarkdownReader(TrainingDataReader):
         s = self._strip_comments(s)
         for line in s.splitlines():
             line = line.strip()
-            header = self._find_section_header(line)
-            if header:
+            if header := self._find_section_header(line):
                 self._set_current_section(header[0], header[1])
             else:
                 self._parse_item(line)
@@ -90,18 +89,14 @@ class MarkdownReader(TrainingDataReader):
         """Checks if the current line contains a section header
         and returns the section and the title."""
         match = re.search(r"##\s*(.+?):(.+)", line)
-        if match is not None:
-            return match.group(1), match.group(2)
-
-        return None
+        return (match.group(1), match.group(2)) if match is not None else None
 
     def _load_files(self, line: Text) -> None:
         """Checks line to see if filename was supplied.  If so, inserts the
         filename into the lookup table slot for processing from the regex
         featurizer."""
         if self.current_section == LOOKUP:
-            match = re.match(fname_regex, line)
-            if match:
+            if match := re.match(fname_regex, line):
                 fname = line.strip()
                 self.lookup_tables.append(
                     {"name": self.current_title, "elements": str(fname)}
@@ -109,8 +104,7 @@ class MarkdownReader(TrainingDataReader):
 
     def _parse_item(self, line: Text) -> None:
         """Parses an md list item line based on the current section type."""
-        match = re.match(item_regex, line)
-        if match:
+        if match := re.match(item_regex, line):
             item = match.group(1)
             if self.current_section == INTENT:
                 parsed = self.parse_training_example(item)
@@ -127,12 +121,13 @@ class MarkdownReader(TrainingDataReader):
     def _add_item_to_lookup(self, item: Text) -> None:
         """Takes a list of lookup table dictionaries.  Finds the one associated
         with the current lookup, then adds the item to the list."""
-        matches = [l for l in self.lookup_tables if l["name"] == self.current_title]
-        if not matches:
-            self.lookup_tables.append({"name": self.current_title, "elements": [item]})
-        else:
+        if matches := [
+            l for l in self.lookup_tables if l["name"] == self.current_title
+        ]:
             elements = matches[0]["elements"]
             elements.append(item)
+        else:
+            self.lookup_tables.append({"name": self.current_title, "elements": [item]})
 
     @staticmethod
     def _find_entities_in_training_example(example: Text) -> List[Dict]:
@@ -187,9 +182,7 @@ class MarkdownReader(TrainingDataReader):
         """Update parsing mode."""
         if section not in available_sections:
             raise ValueError(
-                "Found markdown section '{}' which is not "
-                "in the allowed sections '{}'."
-                "".format(section, "', '".join(available_sections))
+                f"""Found markdown section '{section}' which is not in the allowed sections '{"', '".join(available_sections)}'."""
             )
 
         self.current_section = section
@@ -275,7 +268,7 @@ class MarkdownWriter(TrainingDataWriter):
         md = ""
         # regex features are already sorted
         lookup_tables = training_data.lookup_tables
-        for i, lookup_table in enumerate(lookup_tables):
+        for lookup_table in lookup_tables:
             md += self._generate_section_header_md(LOOKUP, lookup_table["name"])
             elements = lookup_table["elements"]
             if isinstance(elements, list):
@@ -341,6 +334,6 @@ class MarkdownWriter(TrainingDataWriter):
         entity_type = entity["entity"]
         if entity_text != entity["value"]:
             # add synonym suffix
-            entity_type += ":{}".format(entity["value"])
+            entity_type += f':{entity["value"]}'
 
         return f"[{entity_text}]({entity_type})"

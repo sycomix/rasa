@@ -47,7 +47,7 @@ class EntitySynonymMapper(EntityExtractor):
     def persist(self, file_name: Text, model_dir: Text) -> Optional[Dict[Text, Any]]:
 
         if self.synonyms:
-            file_name = file_name + ".json"
+            file_name = f"{file_name}.json"
             entity_synonyms_file = os.path.join(model_dir, file_name)
             write_json_to_file(
                 entity_synonyms_file, self.synonyms, separators=(",", ": ")
@@ -78,7 +78,7 @@ class EntitySynonymMapper(EntityExtractor):
             synonyms = None
             raise_warning(
                 f"Failed to load synonyms file from '{entity_synonyms_file}'.",
-                docs=DOCS_URL_TRAINING_DATA_NLU + "#entity-synonyms",
+                docs=f"{DOCS_URL_TRAINING_DATA_NLU}#entity-synonyms",
             )
         return cls(meta, synonyms)
 
@@ -99,14 +99,8 @@ class EntitySynonymMapper(EntityExtractor):
                 original = original.lower()
                 if original in self.synonyms and self.synonyms[original] != replacement:
                     raise_warning(
-                        f"Found conflicting synonym definitions "
-                        f"for {repr(original)}. Overwriting target "
-                        f"{repr(self.synonyms[original])} with "
-                        f"{repr(replacement)}. "
-                        f"Check your training data and remove "
-                        f"conflicting synonym definitions to "
-                        f"prevent this from happening.",
-                        docs=DOCS_URL_TRAINING_DATA_NLU + "#entity-synonyms",
+                        f"Found conflicting synonym definitions for {repr(original)}. Overwriting target {repr(self.synonyms[original])} with {repr(replacement)}. Check your training data and remove conflicting synonym definitions to prevent this from happening.",
+                        docs=f"{DOCS_URL_TRAINING_DATA_NLU}#entity-synonyms",
                     )
 
                 self.synonyms[original] = replacement

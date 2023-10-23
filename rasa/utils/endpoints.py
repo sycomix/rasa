@@ -31,8 +31,7 @@ def read_endpoint_config(
             return None
     except FileNotFoundError:
         logger.error(
-            "Failed to read endpoint configuration "
-            "from {}. No such file.".format(os.path.abspath(filename))
+            f"Failed to read endpoint configuration from {os.path.abspath(filename)}. No such file."
         )
         return None
 
@@ -48,14 +47,12 @@ def concat_url(base: Text, subpath: Optional[Text]) -> Text:
     if not subpath:
         if base.endswith("/"):
             logger.debug(
-                "The URL '{}' has a trailing slash. Please make sure the "
-                "target server supports trailing slashes for this "
-                "endpoint.".format(base)
+                f"The URL '{base}' has a trailing slash. Please make sure the target server supports trailing slashes for this endpoint."
             )
         return base
 
     url = base
-    if not base.endswith("/"):
+    if not url.endswith("/"):
         url += "/"
     if subpath.startswith("/"):
         subpath = subpath[1:]

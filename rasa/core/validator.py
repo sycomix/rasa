@@ -144,11 +144,8 @@ class Validator:
             if action.startswith(UTTER_PREFIX):
                 if action not in utterance_templates:
                     raise_warning(
-                        f"There is no template for the utterance action '{action}'. "
-                        f"The action is listed in your domains action list, but "
-                        f"there is no template defined with this name. You should "
-                        f"add a template with this key.",
-                        docs=DOCS_URL_ACTIONS + "#utterance-actions",
+                        f"There is no template for the utterance action '{action}'. The action is listed in your domains action list, but there is no template defined with this name. You should add a template with this key.",
+                        docs=f"{DOCS_URL_ACTIONS}#utterance-actions",
                     )
                     everything_is_alright = False
 
@@ -179,11 +176,8 @@ class Validator:
 
                 if event.action_name not in utterance_actions:
                     raise_warning(
-                        f"The action '{event.action_name}' is used in the stories, "
-                        f"but is not a valid utterance action. Please make sure "
-                        f"the action is listed in your domain and there is a "
-                        f"template defined with its name.",
-                        docs=DOCS_URL_ACTIONS + "#utterance-actions",
+                        f"The action '{event.action_name}' is used in the stories, but is not a valid utterance action. Please make sure the action is listed in your domain and there is a template defined with its name.",
+                        docs=f"{DOCS_URL_ACTIONS}#utterance-actions",
                     )
                     everything_is_alright = False
                 stories_utterances.add(event.action_name)

@@ -36,8 +36,7 @@ def deserialise_events(serialized_events: List[Dict[Text, Any]]) -> List["Event"
 
     for e in serialized_events:
         if "event" in e:
-            event = Event.from_parameters(e)
-            if event:
+            if event := Event.from_parameters(e):
                 deserialised.append(event)
             else:
                 logger.warning(
@@ -71,7 +70,7 @@ def md_format_message(text, intent, entities) -> Text:
 
 def first_key(d: Dict[Text, Any], default_key: Any) -> Any:
     if len(d) > 1:
-        for k, v in d.items():
+        for k in d:
             if k != default_key:
                 # we return the first key that is not the default key
                 return k
@@ -125,10 +124,7 @@ class Event:
     ) -> Optional[List["Event"]]:
         event_class = Event.resolve_by_type(event_name, default)
 
-        if not event_class:
-            return None
-
-        return event_class._from_story_string(parameters)
+        return None if not event_class else event_class._from_story_string(parameters)
 
     @staticmethod
     def from_parameters(
@@ -140,10 +136,7 @@ class Event:
             return None
 
         event_class: Type[Event] = Event.resolve_by_type(event_name, default)
-        if not event_class:
-            return None
-
-        return event_class._from_parameters(parameters)
+        return None if not event_class else event_class._from_parameters(parameters)
 
     @classmethod
     def _from_story_string(cls, parameters: Dict[Text, Any]) -> Optional[List["Event"]]:
@@ -276,9 +269,7 @@ class UserUttered(Event):
             )
 
     def __str__(self) -> Text:
-        return "UserUttered(text: {}, intent: {}, entities: {})".format(
-            self.text, self.intent, self.entities
-        )
+        return f"UserUttered(text: {self.text}, intent: {self.intent}, entities: {self.entities})"
 
     @staticmethod
     def empty() -> "UserUttered":
@@ -314,25 +305,23 @@ class UserUttered(Event):
             raise ValueError(f"Failed to parse bot uttered event. {e}")
 
     def as_story_string(self, e2e: bool = False) -> Text:
-        if self.intent:
-            if self.entities:
-                ent_string = json.dumps(
+        if not self.intent:
+            return self.text
+        if e2e:
+            message = md_format_message(self.text, self.intent, self.entities)
+            return f'{self.intent.get("name")}: {message}'
+        else:
+            ent_string = (
+                json.dumps(
                     {ent["entity"]: ent["value"] for ent in self.entities},
                     ensure_ascii=False,
                 )
-            else:
-                ent_string = ""
-
-            parse_string = "{intent}{entities}".format(
+                if self.entities
+                else ""
+            )
+            return "{intent}{entities}".format(
                 intent=self.intent.get("name", ""), entities=ent_string
             )
-            if e2e:
-                message = md_format_message(self.text, self.intent, self.entities)
-                return "{}: {}".format(self.intent.get("name"), message)
-            else:
-                return parse_string
-        else:
-            return self.text
 
     def apply_to(self, tracker: "DialogueStateTracker") -> None:
         tracker.latest_message = self
@@ -384,14 +373,10 @@ class BotUttered(Event):
             return self.__members() == other.__members()
 
     def __str__(self) -> Text:
-        return "BotUttered(text: {}, data: {}, metadata: {})".format(
-            self.text, json.dumps(self.data), json.dumps(self.metadata)
-        )
+        return f"BotUttered(text: {self.text}, data: {json.dumps(self.data)}, metadata: {json.dumps(self.metadata)})"
 
     def __repr__(self) -> Text:
-        return "BotUttered('{}', {}, {}, {})".format(
-            self.text, json.dumps(self.data), json.dumps(self.metadata), self.timestamp
-        )
+        return f"BotUttered('{self.text}', {json.dumps(self.data)}, {json.dumps(self.metadata)}, {self.timestamp})"
 
     def apply_to(self, tracker: "DialogueStateTracker") -> None:
 
@@ -481,14 +466,11 @@ class SlotSet(Event):
     @classmethod
     def _from_story_string(cls, parameters: Dict[Text, Any]) -> Optional[List[Event]]:
 
-        slots = []
-        for slot_key, slot_val in parameters.items():
-            slots.append(SlotSet(slot_key, slot_val))
-
-        if slots:
-            return slots
-        else:
-            return None
+        slots = [
+            SlotSet(slot_key, slot_val)
+            for slot_key, slot_val in parameters.items()
+        ]
+        return slots if slots else None
 
     def as_dict(self) -> Dict[Text, Any]:
         d = super().as_dict()
@@ -997,9 +979,7 @@ class ActionExecuted(Event):
         super().__init__(timestamp, metadata)
 
     def __str__(self) -> Text:
-        return "ActionExecuted(action: {}, policy: {}, confidence: {})".format(
-            self.action_name, self.policy, self.confidence
-        )
+        return f"ActionExecuted(action: {self.action_name}, policy: {self.policy}, confidence: {self.confidence})"
 
     def __hash__(self) -> int:
         return hash(self.action_name)
@@ -1028,13 +1008,8 @@ class ActionExecuted(Event):
 
     def as_dict(self) -> Dict[Text, Any]:
         d = super().as_dict()
-        policy = None  # for backwards compatibility (persisted evemts)
-        if hasattr(self, "policy"):
-            policy = self.policy
-        confidence = None
-        if hasattr(self, "confidence"):
-            confidence = self.confidence
-
+        policy = self.policy if hasattr(self, "policy") else None
+        confidence = self.confidence if hasattr(self, "confidence") else None
         d.update({"name": self.action_name, "policy": policy, "confidence": confidence})
         return d
 
@@ -1076,9 +1051,7 @@ class AgentUttered(Event):
             )
 
     def __str__(self) -> Text:
-        return "AgentUttered(text: {}, data: {})".format(
-            self.text, json.dumps(self.data)
-        )
+        return f"AgentUttered(text: {self.text}, data: {json.dumps(self.data)})"
 
     def apply_to(self, tracker: "DialogueStateTracker") -> None:
 
@@ -1132,10 +1105,7 @@ class Form(Event):
         return hash(self.name)
 
     def __eq__(self, other) -> bool:
-        if not isinstance(other, Form):
-            return False
-        else:
-            return self.name == other.name
+        return False if not isinstance(other, Form) else self.name == other.name
 
     def as_story_string(self) -> Text:
         props = json.dumps({"name": self.name})
@@ -1224,11 +1194,7 @@ class ActionExecutionRejected(Event):
         super().__init__(timestamp, metadata)
 
     def __str__(self) -> Text:
-        return (
-            "ActionExecutionRejected("
-            "action: {}, policy: {}, confidence: {})"
-            "".format(self.action_name, self.policy, self.confidence)
-        )
+        return f"ActionExecutionRejected(action: {self.action_name}, policy: {self.policy}, confidence: {self.confidence})"
 
     def __hash__(self) -> int:
         return hash(self.action_name)

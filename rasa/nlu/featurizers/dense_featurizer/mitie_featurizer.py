@@ -78,8 +78,9 @@ class MitieFeaturizer(Featurizer):
         )
 
     def _mitie_feature_extractor(self, **kwargs) -> Any:
-        mitie_feature_extractor = kwargs.get("mitie_feature_extractor")
-        if not mitie_feature_extractor:
+        if mitie_feature_extractor := kwargs.get("mitie_feature_extractor"):
+            return mitie_feature_extractor
+        else:
             raise Exception(
                 "Failed to train 'MitieFeaturizer'. "
                 "Missing a proper MITIE feature extractor. "
@@ -87,7 +88,6 @@ class MitieFeaturizer(Featurizer):
                 "the 'MitieNLP' component in the pipeline "
                 "configuration."
             )
-        return mitie_feature_extractor
 
     def features_for_tokens(
         self,
@@ -98,10 +98,10 @@ class MitieFeaturizer(Featurizer):
         # remove CLS token from tokens
         tokens_without_cls = tokens[:-1]
 
-        # calculate features
-        features = []
-        for token in tokens_without_cls:
-            features.append(feature_extractor.get_feature_vector(token.text))
+        features = [
+            feature_extractor.get_feature_vector(token.text)
+            for token in tokens_without_cls
+        ]
         features = np.array(features)
 
         cls_token_vec = np.mean(features, axis=0, keepdims=True)

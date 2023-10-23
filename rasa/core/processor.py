@@ -289,10 +289,10 @@ class MessageProcessor:
     ) -> bool:
         """Check if the conversation has been restarted after reminder."""
 
-        for e in reversed(tracker.applied_events()):
-            if MessageProcessor._is_reminder(e, reminder_event.name):
-                return True
-        return False  # not found in applied events --> has been restarted
+        return any(
+            MessageProcessor._is_reminder(e, reminder_event.name)
+            for e in reversed(tracker.applied_events())
+        )
 
     @staticmethod
     def _has_message_after_reminder(
@@ -393,8 +393,7 @@ class MessageProcessor:
 
         domain_is_not_empty = self.domain and not self.domain.is_empty()
 
-        intent = parse_data["intent"]["name"]
-        if intent:
+        if intent := parse_data["intent"]["name"]:
             intent_is_recognized = (
                 domain_is_not_empty and intent in self.domain.intents
             ) or intent in DEFAULT_INTENTS
@@ -434,10 +433,7 @@ class MessageProcessor:
             )
 
         logger.debug(
-            "Received user message '{}' with intent '{}' "
-            "and entities '{}'".format(
-                message.text, parse_data["intent"], parse_data["entities"]
-            )
+            f"""Received user message '{message.text}' with intent '{parse_data["intent"]}' and entities '{parse_data["entities"]}'"""
         )
 
         self._log_unseen_features(parse_data)
@@ -637,9 +633,7 @@ class MessageProcessor:
             if isinstance(e, SlotSet) and e.key not in slots_seen_during_train:
                 s = tracker.slots.get(e.key)
                 if s and s.has_features():
-                    if e.key == "requested_slot" and tracker.active_form:
-                        pass
-                    else:
+                    if e.key != "requested_slot" or not tracker.active_form:
                         raise_warning(
                             f"Action '{action_name}' set a slot type '{e.key}' which "
                             f"it never set during the training. This "
@@ -661,9 +655,7 @@ class MessageProcessor:
         if events is None:
             events = []
 
-        logger.debug(
-            f"Action '{action_name}' ended with events '{[e for e in events]}'."
-        )
+        logger.debug(f"Action '{action_name}' ended with events '{list(events)}'.")
 
         self._warn_about_new_slots(tracker, action_name, events)
 
@@ -740,11 +732,9 @@ class MessageProcessor:
     ) -> Tuple[Optional[List[float]], Optional[Text]]:
         """Collect predictions from ensemble and return action and predictions."""
 
-        followup_action = tracker.followup_action
-        if followup_action:
+        if followup_action := tracker.followup_action:
             tracker.clear_followup_action()
-            result = self._prob_array_for_action(followup_action)
-            if result:
+            if result := self._prob_array_for_action(followup_action):
                 return result
             else:
                 logger.error(

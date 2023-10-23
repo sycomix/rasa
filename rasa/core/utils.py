@@ -55,7 +55,7 @@ def configure_file_logging(logger_obj: logging.Logger, log_file: Optional[Text])
 
 def module_path_from_instance(inst: Any) -> Text:
     """Return the module path of an instance's class."""
-    return inst.__module__ + "." + inst.__class__.__name__
+    return f"{inst.__module__}.{inst.__class__.__name__}"
 
 
 def subsample_array(
@@ -91,8 +91,7 @@ def is_int(value: Any) -> bool:
 def one_hot(hot_idx: int, length: int, dtype: Optional[Text] = None) -> np.array:
     if hot_idx >= length:
         raise ValueError(
-            "Can't create one hot. Index '{}' is out "
-            "of range (length '{}')".format(hot_idx, length)
+            f"Can't create one hot. Index '{hot_idx}' is out of range (length '{length}')"
         )
     r = np.zeros(length, dtype)
     r[hot_idx] = 1
@@ -182,10 +181,7 @@ class HashableNDArray:
         If the wrapper is "tight", a copy of the encapsulated ndarray is
         returned. Otherwise, the encapsulated ndarray itself is returned."""
 
-        if self.__tight:
-            return np.array(self.__wrapped)
-
-        return self.__wrapped
+        return np.array(self.__wrapped) if self.__tight else self.__wrapped
 
 
 def _dump_yaml(obj: Dict, output: Union[Text, Path, StringIO]) -> None:
@@ -258,10 +254,7 @@ def cap_length(s: Text, char_limit: int = 20, append_ellipsis: bool = True) -> T
     Appends an ellipsis if the string is too long."""
 
     if len(s) > char_limit:
-        if append_ellipsis:
-            return s[: char_limit - 3] + "..."
-        else:
-            return s[:char_limit]
+        return f"{s[:char_limit - 3]}..." if append_ellipsis else s[:char_limit]
     else:
         return s
 
@@ -477,7 +470,7 @@ def replace_floats_with_decimals(obj: Union[List, Dict], round_digits: int = 9) 
         for j in obj:
             obj[j] = replace_floats_with_decimals(obj[j], round_digits)
         return obj
-    elif isinstance(obj, float) or isinstance(obj, Decimal):
+    elif isinstance(obj, (float, Decimal)):
         return round(Decimal(obj), round_digits)
     else:
         return obj
@@ -488,10 +481,7 @@ def _lock_store_is_redis_lock_store(
 ) -> bool:
     # determine whether `lock_store` is associated with a `RedisLockStore`
     if isinstance(lock_store, LockStore):
-        if isinstance(lock_store, RedisLockStore):
-            return True
-        return False
-
+        return isinstance(lock_store, RedisLockStore)
     # `lock_store` is `None` or `EndpointConfig`
     return lock_store is not None and lock_store.type == "redis"
 

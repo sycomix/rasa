@@ -29,12 +29,10 @@ class MitieTokenizer(Tokenizer):
 
         encoded_sentence = text.encode(DEFAULT_ENCODING)
         tokenized = mitie.tokenize_with_offsets(encoded_sentence)
-        tokens = [
+        return [
             self._token_from_offset(token, offset, encoded_sentence)
             for token, offset in tokenized
         ]
-
-        return tokens
 
     def _token_from_offset(
         self, text: bytes, offset: int, encoded_sentence: bytes

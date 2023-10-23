@@ -230,7 +230,7 @@ async def test_softmax_normalization(
 
     # check whether normalization had the expected effect
     output_sums_to_1 = sum(
-        [intent.get("confidence") for intent in intent_ranking]
+        intent.get("confidence") for intent in intent_ranking
     ) == pytest.approx(1)
     assert output_sums_to_1 == output_should_sum_to_1
 

@@ -19,10 +19,7 @@ class Message:
         self.time = time
         self.data = data if data else {}
 
-        if output_properties:
-            self.output_properties = output_properties
-        else:
-            self.output_properties = set()
+        self.output_properties = output_properties if output_properties else set()
 
     def set(self, prop, info, add_to_output=False) -> None:
         self.data[prop] = info
@@ -30,9 +27,7 @@ class Message:
             self.output_properties.add(prop)
 
     def get(self, prop, default=None) -> Any:
-        if prop == TEXT_ATTRIBUTE:
-            return self.text
-        return self.data.get(prop, default)
+        return self.text if prop == TEXT_ATTRIBUTE else self.data.get(prop, default)
 
     def as_dict_nlu(self) -> dict:
         """Get dict representation of message as it would appear in training data"""

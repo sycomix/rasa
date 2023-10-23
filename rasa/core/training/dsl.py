@@ -53,10 +53,7 @@ class EndToEndReader(MarkdownReader):
 
         if not match:
             raise ValueError(
-                "Encountered invalid end-to-end format for message "
-                "`{}`. Please visit the documentation page on "
-                "end-to-end evaluation at {}/user-guide/evaluating-models/"
-                "#end-to-end-evaluation/".format(line, DOCS_BASE_URL)
+                f"Encountered invalid end-to-end format for message `{line}`. Please visit the documentation page on end-to-end evaluation at {DOCS_BASE_URL}/user-guide/evaluating-models/#end-to-end-evaluation/"
             )
 
         intent = match.group(2)
@@ -90,10 +87,8 @@ class StoryStepBuilder:
         else:
             if conditions:
                 raise_warning(
-                    f"End or intermediate checkpoints "
-                    f"do not support conditions! "
-                    f"(checkpoint: {name})",
-                    docs=DOCS_URL_STORIES + "#checkpoints",
+                    f"End or intermediate checkpoints do not support conditions! (checkpoint: {name})",
+                    docs=f"{DOCS_URL_STORIES}#checkpoints",
                 )
             additional_steps = []
             for t in self.current_steps:
@@ -108,10 +103,9 @@ class StoryStepBuilder:
     def _prev_end_checkpoints(self):
         if not self.current_steps:
             return self.start_checkpoints
-        else:
-            # makes sure we got each end name only once
-            end_names = {e.name for s in self.current_steps for e in s.end_checkpoints}
-            return [Checkpoint(name) for name in end_names]
+        # makes sure we got each end name only once
+        end_names = {e.name for s in self.current_steps for e in s.end_checkpoints}
+        return [Checkpoint(name) for name in end_names]
 
     def add_user_messages(self, messages: List[UserUttered]):
         self.ensure_current_steps()
@@ -125,7 +119,7 @@ class StoryStepBuilder:
             # user can use the express the same thing
             # we need to copy the blocks and create one
             # copy for each possible message
-            prefix = GENERATED_CHECKPOINT_PREFIX + "OR_"
+            prefix = f"{GENERATED_CHECKPOINT_PREFIX}OR_"
             generated_checkpoint = utils.generate_id(prefix, GENERATED_HASH_LENGTH)
             updated_steps = []
             for t in self.current_steps:
@@ -145,10 +139,7 @@ class StoryStepBuilder:
         completed = [step for step in self.current_steps if step.end_checkpoints]
         unfinished = [step for step in self.current_steps if not step.end_checkpoints]
         self.story_steps.extend(completed)
-        if unfinished:
-            self.current_steps = unfinished
-        else:
-            self.current_steps = self._next_story_steps()
+        self.current_steps = unfinished if unfinished else self._next_story_steps()
 
     def flush(self):
         if self.current_steps:
@@ -159,10 +150,9 @@ class StoryStepBuilder:
         start_checkpoints = self._prev_end_checkpoints()
         if not start_checkpoints:
             start_checkpoints = [Checkpoint(STORY_START)]
-        current_turns = [
+        return [
             StoryStep(block_name=self.name, start_checkpoints=start_checkpoints)
         ]
-        return current_turns
 
 
 class StoryFileReader:
@@ -194,9 +184,7 @@ class StoryFileReader:
         """Given a path reads all contained story files."""
         if not os.path.exists(resource_name):
             raise ValueError(
-                "Story file or folder could not be found. Make "
-                "sure '{}' exists and points to a story folder "
-                "or file.".format(os.path.abspath(resource_name))
+                f"Story file or folder could not be found. Make sure '{os.path.abspath(resource_name)}' exists and points to a story folder or file."
             )
 
         files = io_utils.list_files(resource_name)
@@ -253,9 +241,7 @@ class StoryFileReader:
             reader = StoryFileReader(domain, interpreter, template_variables, use_e2e)
             return await reader.process_lines(lines)
         except ValueError as err:
-            file_info = "Invalid story file format. Failed to parse '{}'".format(
-                os.path.abspath(filename)
-            )
+            file_info = f"Invalid story file format. Failed to parse '{os.path.abspath(filename)}'"
             logger.exception(file_info)
             if not err.args:
                 err.args = ("",)
@@ -276,17 +262,11 @@ class StoryFileReader:
                 return parsed_slots
             else:
                 raise Exception(
-                    "Parsed value isn't a json object "
-                    "(instead parser found '{}')"
-                    ".".format(type(parsed_slots))
+                    f"Parsed value isn't a json object (instead parser found '{type(parsed_slots)}')."
                 )
         except Exception as e:
             raise ValueError(
-                "Invalid to parse arguments in line "
-                "'{}'. Failed to decode parameters"
-                "as a json object. Make sure the event"
-                "name is followed by a proper json "
-                "object. Error: {}".format(line, e)
+                f"Invalid to parse arguments in line '{line}'. Failed to decode parametersas a json object. Make sure the eventname is followed by a proper json object. Error: {e}"
             )
 
     @staticmethod
@@ -333,11 +313,7 @@ class StoryFileReader:
                     name, conditions = self._parse_event_line(line[1:].strip())
                     self.add_checkpoint(name, conditions)
                 elif re.match(fr"^[*\-]\s+{FORM_PREFIX}", line):
-                    logger.debug(
-                        "Skipping line {}, "
-                        "because it was generated by "
-                        "form action".format(line)
-                    )
+                    logger.debug(f"Skipping line {line}, because it was generated by form action")
                 elif line.startswith("-"):
                     # reached a slot, event, or executed action
                     event_name, parameters = self._parse_event_line(line[1:])
@@ -398,8 +374,7 @@ class StoryFileReader:
         # Ensure story part already has a name
         if not self.current_step_builder:
             raise StoryParseError(
-                "Checkpoint '{}' is at an invalid location. "
-                "Expected a story start.".format(name)
+                f"Checkpoint '{name}' is at an invalid location. Expected a story start."
             )
 
         self.current_step_builder.add_checkpoint(name, conditions)
@@ -426,8 +401,7 @@ class StoryFileReader:
     async def add_user_messages(self, messages, line_num):
         if not self.current_step_builder:
             raise StoryParseError(
-                "User message '{}' at invalid location. "
-                "Expected story start.".format(messages)
+                f"User message '{messages}' at invalid location. Expected story start."
             )
         parsed_messages = await asyncio.gather(
             *[self._parse_message(m, line_num) for m in messages]
@@ -437,9 +411,7 @@ class StoryFileReader:
     async def add_e2e_messages(self, e2e_messages: List[Text], line_num: int) -> None:
         if not self.current_step_builder:
             raise StoryParseError(
-                "End-to-end message '{}' at invalid "
-                "location. Expected story start."
-                "".format(e2e_messages)
+                f"End-to-end message '{e2e_messages}' at invalid location. Expected story start."
             )
         e2e_reader = EndToEndReader()
         parsed_messages = []
@@ -464,14 +436,11 @@ class StoryFileReader:
         )
         if parsed_events is None:
             raise StoryParseError(
-                "Unknown event '{}'. It is Neither an event "
-                "nor an action).".format(event_name)
+                f"Unknown event '{event_name}'. It is Neither an event nor an action)."
             )
         if self.current_step_builder is None:
             raise StoryParseError(
-                "Failed to handle event '{}'. There is no "
-                "started story block available. "
-                "".format(event_name)
+                f"Failed to handle event '{event_name}'. There is no started story block available. "
             )
 
         for p in parsed_events:

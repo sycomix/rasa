@@ -108,9 +108,7 @@ def test_file_broker_logs_to_file(tmpdir):
     # reading the events from the file one event per line
     recovered = []
     with open(log_file_path, "r") as log_file:
-        for line in log_file:
-            recovered.append(Event.from_parameters(json.loads(line)))
-
+        recovered.extend(Event.from_parameters(json.loads(line)) for line in log_file)
     assert recovered == TEST_EVENTS
 
 
@@ -128,9 +126,7 @@ def test_file_broker_properly_logs_newlines(tmpdir):
     # reading the events from the file one event per line
     recovered = []
     with open(log_file_path, "r") as log_file:
-        for line in log_file:
-            recovered.append(Event.from_parameters(json.loads(line)))
-
+        recovered.extend(Event.from_parameters(json.loads(line)) for line in log_file)
     assert recovered == [event_with_newline]
 
 

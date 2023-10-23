@@ -108,8 +108,7 @@ class Domain:
             domain = cls.from_directory(path)
         else:
             raise InvalidDomain(
-                "Failed to load domain specification from '{}'. "
-                "File not found!".format(os.path.abspath(path))
+                f"Failed to load domain specification from '{os.path.abspath(path)}'. File not found!"
             )
 
         return domain
@@ -170,7 +169,7 @@ class Domain:
                 "session expiration time of 60 minutes in Rasa version 2.0 if not "
                 "configured otherwise.",
                 FutureWarning,
-                docs=DOCS_URL_DOMAINS + "#session-configuration",
+                docs=f"{DOCS_URL_DOMAINS}#session-configuration",
             )
             session_expiration_time = 0
 
@@ -283,10 +282,9 @@ class Domain:
                 name = intent
                 intent = {intent: {"use_entities": True, "ignore_entities": []}}
 
-            if name in intent_properties.keys():
+            if name in intent_properties:
                 raise InvalidDomain(
-                    "Intents are not unique! Found two intents with name '{}'. "
-                    "Either rename or remove one of them.".format(name)
+                    f"Intents are not unique! Found two intents with name '{name}'. Either rename or remove one of them."
                 )
 
             intent_properties.update(intent)
@@ -303,9 +301,7 @@ class Domain:
             validated_variations = []
             if template_variations is None:
                 raise InvalidDomain(
-                    "Utterance '{}' does not have any defined templates.".format(
-                        template_key
-                    )
+                    f"Utterance '{template_key}' does not have any defined templates."
                 )
 
             for t in template_variations:
@@ -313,12 +309,9 @@ class Domain:
                 # templates should be a dict with options
                 if isinstance(t, str):
                     raise_warning(
-                        f"Templates should not be strings anymore. "
-                        f"Utterance template '{template_key}' should contain "
-                        f"either a '- text: ' or a '- custom: ' "
-                        f"attribute to be a proper template.",
+                        f"Templates should not be strings anymore. Utterance template '{template_key}' should contain either a '- text: ' or a '- custom: ' attribute to be a proper template.",
                         FutureWarning,
-                        docs=DOCS_URL_DOMAINS + "#utterance-templates",
+                        docs=f"{DOCS_URL_DOMAINS}#utterance-templates",
                     )
                     validated_variations.append({"text": t})
                 elif "text" not in t and "custom" not in t:
@@ -422,9 +415,7 @@ class Domain:
         """
         if DEFAULT_KNOWLEDGE_BASE_ACTION in self.action_names:
             logger.warning(
-                "You are using an experiential feature: Action '{}'!".format(
-                    DEFAULT_KNOWLEDGE_BASE_ACTION
-                )
+                f"You are using an experiential feature: Action '{DEFAULT_KNOWLEDGE_BASE_ACTION}'!"
             )
             slot_names = [s.name for s in self.slots]
             knowledge_base_slots = [
@@ -457,9 +448,7 @@ class Domain:
 
         if self.num_actions <= index or index < 0:
             raise IndexError(
-                "Cannot access action at index {}. "
-                "Domain has {} actions."
-                "".format(index, self.num_actions)
+                f"Cannot access action at index {index}. Domain has {self.num_actions} actions."
             )
 
         return self.action_for_name(self.action_names[index], action_endpoint)
@@ -581,11 +570,11 @@ class Domain:
         if "intent_ranking" in latest_message.parse_data:
             for intent in latest_message.parse_data["intent_ranking"]:
                 if intent.get("name"):
-                    intent_id = "intent_{}".format(intent["name"])
+                    intent_id = f'intent_{intent["name"]}'
                     state_dict[intent_id] = intent["confidence"]
 
         elif intent_name:
-            intent_id = "intent_{}".format(latest_message.intent["name"])
+            intent_id = f'intent_{latest_message.intent["name"]}'
             state_dict[intent_id] = latest_message.intent.get("confidence", 1.0)
 
         return state_dict
@@ -611,11 +600,8 @@ class Domain:
         ambiguous_entities = included_entities.intersection(excluded_entities)
         if explicitly_included and ambiguous_entities:
             raise_warning(
-                f"Entities: '{ambiguous_entities}' are explicitly included and"
-                f" excluded for intent '{intent_name}'."
-                f"Excluding takes precedence in this case. "
-                f"Please resolve that ambiguity.",
-                docs=DOCS_URL_DOMAINS + "#ignoring-entities-for-certain-intents",
+                f"Entities: '{ambiguous_entities}' are explicitly included and excluded for intent '{intent_name}'.Excluding takes precedence in this case. Please resolve that ambiguity.",
+                docs=f"{DOCS_URL_DOMAINS}#ignoring-entities-for-certain-intents",
             )
 
         return entity_names.intersection(wanted_entities)
@@ -625,24 +611,20 @@ class Domain:
     ) -> Dict[Text, float]:
         """Turns the previous taken action into a state name."""
 
-        latest_action = tracker.latest_action_name
-        if latest_action:
-            prev_action_name = PREV_PREFIX + latest_action
-            if prev_action_name in self.input_state_map:
-                return {prev_action_name: 1.0}
-            else:
-                return {}
-        else:
+        if not (latest_action := tracker.latest_action_name):
             return {}
+        prev_action_name = PREV_PREFIX + latest_action
+        return (
+            {prev_action_name: 1.0}
+            if prev_action_name in self.input_state_map
+            else {}
+        )
 
     @staticmethod
     def get_active_form(tracker: "DialogueStateTracker") -> Dict[Text, float]:
         """Turns tracker's active form into a state name."""
         form = tracker.active_form.get("name")
-        if form is not None:
-            return {ACTIVE_FORM_PREFIX + form: 1.0}
-        else:
-            return {}
+        return {ACTIVE_FORM_PREFIX + form: 1.0} if form is not None else {}
 
     def get_active_states(self, tracker: "DialogueStateTracker") -> Dict[Text, float]:
         """Return a bag of active states from the tracker state"""
@@ -660,21 +642,19 @@ class Domain:
         ]
 
     def slots_for_entities(self, entities: List[Dict[Text, Any]]) -> List[SlotSet]:
-        if self.store_entities_as_slots:
-            slot_events = []
-            for s in self.slots:
-                if s.auto_fill:
-                    matching_entities = [
-                        e["value"] for e in entities if e["entity"] == s.name
-                    ]
-                    if matching_entities:
-                        if s.type_name == "list":
-                            slot_events.append(SlotSet(s.name, matching_entities))
-                        else:
-                            slot_events.append(SlotSet(s.name, matching_entities[-1]))
-            return slot_events
-        else:
+        if not self.store_entities_as_slots:
             return []
+        slot_events = []
+        for s in self.slots:
+            if s.auto_fill:
+                if matching_entities := [
+                    e["value"] for e in entities if e["entity"] == s.name
+                ]:
+                    if s.type_name == "list":
+                        slot_events.append(SlotSet(s.name, matching_entities))
+                    else:
+                        slot_events.append(SlotSet(s.name, matching_entities[-1]))
+        return slot_events
 
     def persist_specification(self, model_path: Text) -> None:
         """Persists the domain specification to storage."""
@@ -690,8 +670,7 @@ class Domain:
         """Load a domains specification from a dumped model directory."""
 
         metadata_path = os.path.join(path, "domain.json")
-        specification = json.loads(rasa.utils.io.read_file(metadata_path))
-        return specification
+        return json.loads(rasa.utils.io.read_file(metadata_path))
 
     def compare_with_specification(self, path: Text) -> bool:
         """Compares the domain spec of the current and the loaded domain.
@@ -779,11 +758,7 @@ class Domain:
         utils.dump_obj_as_yaml_to_file(filename, cleaned_domain_data)
 
     def as_yaml(self, clean_before_dump: bool = False) -> Text:
-        if clean_before_dump:
-            domain_data = self.cleaned_domain()
-        else:
-            domain_data = self.as_dict()
-
+        domain_data = self.cleaned_domain() if clean_before_dump else self.as_dict()
         return utils.dump_obj_as_yaml_to_string(domain_data)
 
     def intent_config(self, intent_name: Text) -> Dict[Text, Any]:
@@ -887,11 +862,11 @@ class Domain:
             ]
 
         def check_mappings(
-            intent_properties: Dict[Text, Dict[Text, Union[bool, List]]]
-        ) -> List[Tuple[Text, Text]]:
+                intent_properties: Dict[Text, Dict[Text, Union[bool, List]]]
+            ) -> List[Tuple[Text, Text]]:
             """Check whether intent-action mappings use proper action names."""
 
-            incorrect = list()
+            incorrect = []
             for intent, properties in intent_properties.items():
                 if "triggers" in properties:
                     triggered_action = properties.get("triggers")
@@ -975,16 +950,13 @@ class Domain:
             if a.startswith(rasa.core.constants.UTTER_PREFIX)
         ]
 
-        missing_templates = [t for t in utterances if t not in self.templates.keys()]
-
-        if missing_templates:
+        if missing_templates := [
+            t for t in utterances if t not in self.templates.keys()
+        ]:
             for template in missing_templates:
                 raise_warning(
-                    f"Utterance '{template}' is listed as an "
-                    f"action in the domain file, but there is "
-                    f"no matching utterance template. Please "
-                    f"check your domain.",
-                    docs=DOCS_URL_DOMAINS + "#utterance-templates",
+                    f"Utterance '{template}' is listed as an action in the domain file, but there is no matching utterance template. Please check your domain.",
+                    docs=f"{DOCS_URL_DOMAINS}#utterance-templates",
                 )
 
     def is_empty(self) -> bool:

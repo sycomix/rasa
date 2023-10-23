@@ -27,15 +27,17 @@ DEFAULT_RASA_X_PORT = 5002
 DEFAULT_RASA_PORT = 5005
 
 DOCS_BASE_URL = "https://rasa.com/docs/rasa"
-DOCS_URL_POLICIES = DOCS_BASE_URL + "/core/policies/"
-DOCS_URL_DOMAINS = DOCS_BASE_URL + "/core/domains/"
-DOCS_URL_STORIES = DOCS_BASE_URL + "/core/stories/"
-DOCS_URL_ACTIONS = DOCS_BASE_URL + "/core/actions/"
-DOCS_URL_EVENT_BROKERS = DOCS_BASE_URL + "/api/event-brokers/"
-DOCS_URL_PIPELINE = DOCS_BASE_URL + "/nlu/choosing-a-pipeline/"
-DOCS_URL_COMPONENTS = DOCS_BASE_URL + "/nlu/components/"
-DOCS_URL_TRAINING_DATA_NLU = DOCS_BASE_URL + "/nlu/training-data-format/"
-DOCS_URL_MIGRATE_GOOGLE = DOCS_BASE_URL + "/migrate-from/google-dialogflow-to-rasa/"
+DOCS_URL_POLICIES = f"{DOCS_BASE_URL}/core/policies/"
+DOCS_URL_DOMAINS = f"{DOCS_BASE_URL}/core/domains/"
+DOCS_URL_STORIES = f"{DOCS_BASE_URL}/core/stories/"
+DOCS_URL_ACTIONS = f"{DOCS_BASE_URL}/core/actions/"
+DOCS_URL_EVENT_BROKERS = f"{DOCS_BASE_URL}/api/event-brokers/"
+DOCS_URL_PIPELINE = f"{DOCS_BASE_URL}/nlu/choosing-a-pipeline/"
+DOCS_URL_COMPONENTS = f"{DOCS_BASE_URL}/nlu/components/"
+DOCS_URL_TRAINING_DATA_NLU = f"{DOCS_BASE_URL}/nlu/training-data-format/"
+DOCS_URL_MIGRATE_GOOGLE = (
+    f"{DOCS_BASE_URL}/migrate-from/google-dialogflow-to-rasa/"
+)
 
 LEGACY_DOCS_BASE_URL = "http://legacy-docs.rasa.com"
 

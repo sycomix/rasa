@@ -171,8 +171,7 @@ class Trainer:
         context = kwargs
 
         for component in self.pipeline:
-            updates = component.provide_context()
-            if updates:
+            if updates := component.provide_context():
                 context.update(updates)
 
         # Before the training starts: check that all arguments are provided
@@ -240,9 +239,7 @@ class Trainer:
 
         if persistor is not None:
             persistor.persist(dir_name, model_name)
-        logger.info(
-            "Successfully saved model into '{}'".format(os.path.abspath(dir_name))
-        )
+        logger.info(f"Successfully saved model into '{os.path.abspath(dir_name)}'")
         return dir_name
 
 
@@ -267,12 +264,7 @@ class Interpreter:
         model_version = metadata.get("rasa_version", "0.0.0")
         if version.parse(model_version) < version.parse(version_to_check):
             raise UnsupportedModelError(
-                "The model version is too old to be "
-                "loaded by this Rasa NLU instance. "
-                "Either retrain the model, or run with "
-                "an older version. "
-                "Model version: {} Instance version: {}"
-                "".format(model_version, rasa.__version__)
+                f"The model version is too old to be loaded by this Rasa NLU instance. Either retrain the model, or run with an older version. Model version: {model_version} Instance version: {rasa.__version__}"
             )
 
     @staticmethod
@@ -328,15 +320,11 @@ class Interpreter:
                 component_meta, model_metadata.model_dir, model_metadata, **context
             )
             try:
-                updates = component.provide_context()
-                if updates:
+                if updates := component.provide_context():
                     context.update(updates)
                 pipeline.append(component)
             except components.MissingArgumentError as e:
-                raise Exception(
-                    "Failed to initialize component '{}'. "
-                    "{}".format(component.name, e)
-                )
+                raise Exception(f"Failed to initialize component '{component.name}'. {e}")
 
         return Interpreter(pipeline, context, model_metadata)
 

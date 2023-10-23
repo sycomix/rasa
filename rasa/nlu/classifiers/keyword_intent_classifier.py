@@ -59,12 +59,8 @@ class KeywordIntentClassifier(Component):
             ):
                 duplicate_examples.add(ex.text)
                 raise_warning(
-                    f"Keyword '{ex.text}' is a keyword to trigger intent "
-                    f"'{self.intent_keyword_map[ex.text]}' and also "
-                    f"intent '{ex.get(INTENT_ATTRIBUTE)}', it will be removed "
-                    f"from the list of keywords for both of them. "
-                    f"Remove (one of) the duplicates from the training data.",
-                    docs=DOCS_URL_COMPONENTS + "#keyword-intent-classifier",
+                    f"Keyword '{ex.text}' is a keyword to trigger intent '{self.intent_keyword_map[ex.text]}' and also intent '{ex.get(INTENT_ATTRIBUTE)}', it will be removed from the list of keywords for both of them. Remove (one of) the duplicates from the training data.",
+                    docs=f"{DOCS_URL_COMPONENTS}#keyword-intent-classifier",
                 )
             else:
                 self.intent_keyword_map[ex.text] = ex.get(INTENT_ATTRIBUTE)
@@ -89,13 +85,8 @@ class KeywordIntentClassifier(Component):
                 ):
                     ambiguous_mappings.append((intent1, keyword1))
                     raise_warning(
-                        f"Keyword '{keyword1}' is a keyword of intent '{intent1}', "
-                        f"but also a substring of '{keyword2}', which is a "
-                        f"keyword of intent '{intent2}."
-                        f" '{keyword1}' will be removed from the list of keywords.\n"
-                        f"Remove (one of) the conflicting keywords from the"
-                        f" training data.",
-                        docs=DOCS_URL_COMPONENTS + "#keyword-intent-classifier",
+                        f"Keyword '{keyword1}' is a keyword of intent '{intent1}', but also a substring of '{keyword2}', which is a keyword of intent '{intent2}. '{keyword1}' will be removed from the list of keywords.\nRemove (one of) the conflicting keywords from the training data.",
+                        docs=f"{DOCS_URL_COMPONENTS}#keyword-intent-classifier",
                     )
         for intent, keyword in ambiguous_mappings:
             self.intent_keyword_map.pop(keyword)
@@ -133,7 +124,7 @@ class KeywordIntentClassifier(Component):
         Return the metadata necessary to load the model again.
         """
 
-        file_name = file_name + ".json"
+        file_name = f"{file_name}.json"
         keyword_file = os.path.join(model_dir, file_name)
         utils.write_json_to_file(keyword_file, self.intent_keyword_map)
 

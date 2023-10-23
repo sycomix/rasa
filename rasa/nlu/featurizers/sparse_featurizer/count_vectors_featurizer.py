@@ -123,9 +123,7 @@ class CountVectorsFeaturizer(Featurizer):
         self.OOV_words = self.component_config["OOV_words"]
         if self.OOV_words and not self.OOV_token:
             logger.error(
-                "The list OOV_words={} was given, but "
-                "OOV_token was not. OOV words are ignored."
-                "".format(self.OOV_words)
+                f"The list OOV_words={self.OOV_words} was given, but OOV_token was not. OOV words are ignored."
             )
             self.OOV_words = []
 
@@ -295,10 +293,8 @@ class CountVectorsFeaturizer(Featurizer):
         if any(text for tokens in all_tokens for text in tokens):
             # if there is some text in tokens, warn if there is no oov token
             raise_warning(
-                f"The out of vocabulary token '{self.OOV_token}' was configured, but "
-                f"could not be found in any one of the NLU message training examples. "
-                f"All unseen words will be ignored during prediction.",
-                docs=DOCS_URL_COMPONENTS + "#countvectorsfeaturizer",
+                f"The out of vocabulary token '{self.OOV_token}' was configured, but could not be found in any one of the NLU message training examples. All unseen words will be ignored during prediction.",
+                docs=f"{DOCS_URL_COMPONENTS}#countvectorsfeaturizer",
             )
 
     def _get_all_attributes_processed_tokens(
@@ -325,8 +321,7 @@ class CountVectorsFeaturizer(Featurizer):
     ) -> Dict[Text, List[Text]]:
         attribute_texts = {}
 
-        for attribute in attribute_tokens.keys():
-            list_of_tokens = attribute_tokens[attribute]
+        for attribute, list_of_tokens in attribute_tokens.items():
             if attribute in [RESPONSE_ATTRIBUTE, TEXT_ATTRIBUTE]:
                 # vocabulary should not contain CLS token
                 list_of_tokens = [tokens[:-1] for tokens in list_of_tokens]
@@ -530,12 +525,10 @@ class CountVectorsFeaturizer(Featurizer):
     def _collect_vectorizer_vocabularies(self) -> Dict[Text, Optional[Dict[Text, int]]]:
         """Get vocabulary for all attributes"""
 
-        attribute_vocabularies = {}
-        for attribute in self._attributes:
-            attribute_vocabularies[attribute] = self._get_attribute_vocabulary(
-                attribute
-            )
-        return attribute_vocabularies
+        return {
+            attribute: self._get_attribute_vocabulary(attribute)
+            for attribute in self._attributes
+        }
 
     @staticmethod
     def _is_any_model_trained(attribute_vocabularies) -> bool:
@@ -549,7 +542,7 @@ class CountVectorsFeaturizer(Featurizer):
         Returns the metadata necessary to load the model again.
         """
 
-        file_name = file_name + ".pkl"
+        file_name = f"{file_name}.pkl"
 
         if self.vectorizers:
             # vectorizer instance was not None, some models could have been trained
@@ -588,12 +581,10 @@ class CountVectorsFeaturizer(Featurizer):
             vocabulary=vocabulary,
         )
 
-        attribute_vectorizers = {}
-
-        for attribute in cls._attributes_for(parameters["analyzer"]):
-            attribute_vectorizers[attribute] = shared_vectorizer
-
-        return attribute_vectorizers
+        return {
+            attribute: shared_vectorizer
+            for attribute in cls._attributes_for(parameters["analyzer"])
+        }
 
     @classmethod
     def _create_independent_vocab_vectorizers(

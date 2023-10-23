@@ -177,11 +177,8 @@ class ConveRTFeaturizer(Featurizer):
 
         if config is not None and config.language != "en":
             raise_warning(
-                f"Since ``ConveRT`` model is trained only on an english "
-                f"corpus of conversations, this featurizer should only be "
-                f"used if your training data is in english language. "
-                f"However, you are training in '{config.language}'. ",
-                docs=DOCS_URL_COMPONENTS + "#convertfeaturizer",
+                f"Since ``ConveRT`` model is trained only on an english corpus of conversations, this featurizer should only be used if your training data is in english language. However, you are training in '{config.language}'. ",
+                docs=f"{DOCS_URL_COMPONENTS}#convertfeaturizer",
             )
 
         batch_size = 64

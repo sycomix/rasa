@@ -69,9 +69,7 @@ class JiebaTokenizer(Tokenizer):
         text = message.get(attribute)
 
         tokenized = jieba.tokenize(text)
-        tokens = [Token(word, start) for (word, start, end) in tokenized]
-
-        return tokens
+        return [Token(word, start) for (word, start, end) in tokenized]
 
     @classmethod
     def load(
